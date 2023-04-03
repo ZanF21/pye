@@ -22,7 +22,7 @@ typedef struct {
     int phase_discovered;
 } payload;
 
-/**for
+/**
  * initialize_graph - Initializes the graph with basic data
  *
  * @g: a pointer to the graph object
@@ -60,46 +60,14 @@ int broadcast_start(graph* g, int p) {
     int nobody_was_discovered = 1;
 
     #pragma omp parallel for schedule(SCHEDULING_METHOD)
-    
-    // -------
-    //  node* pf_cur = elem_at(&g->vertices, 0);
-    //  PREFETCHT0 pf_cur {to do temporal or to not do temporal}
-    //                      { ok we dont do temporal, because pollution would be inevitable as previos  }
-    // -------
-
     for (int i = 0; i < g->N; i++) {
         node* cur = elem_at(&g->vertices, i);
         payload* data = cur->data;
 
         // this node was just discovered in phase `p`
         if (data->phase_discovered == p) {
-            
-            // -------
-            // {this is what we would ideally like to achive}
-            // node* pf_neigh = *((node**) elem_at(&pf_cur->neighbors, 0));
-            // if (pf_neigh->data->phasediscovered < 0) {wont this need mem access before hand??? how to prefetch??? so as not to pollute existing cache}
-            //      PREFETCHTW pf_neigh  
-            // -------
-            // {or we could just do a PREFETCHW which would invalidate all other prefetchs for the data
-            //                          and just move on, basically no overhead of checking
-            //                              - no diffrent overhead mentioned for PREFETCHW (because ig invalidating all call should have some overhead)}
-            //                              - tried finding ..... not any found for more overhead
-            // -------
-            
             // we send a "join p+1" message to all quiet neighbors
             for (int j = 0; j < cur->degree; j++) {
-
-                // -------
-                // if ( j+1 < cur->degree ) {np condition as everything is available ... no need to call anything from far away}
-                //      pf_neigh = *((node**) elem_at(&pf_cur->neighbors, j+1));
-                // ##################################
-                //          if (pf_neigh->data->phasediscovered < 0) {wont this need mem access before hand??? how to prefetch??? so as to not pollute}
-                // ###################################
-                //      PREFETCHTW pf_neigh
-                // -------
-                // { Assuming all the other parts of the node are contigous and not scattered requiring another prefetch }
-                // -------
-                
                 node* neighbor = *((node**) elem_at(&cur->neighbors, j));
                 payload* neighbor_data = neighbor->data;
 

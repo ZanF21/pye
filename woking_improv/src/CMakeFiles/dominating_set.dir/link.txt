@@ -1,0 +1,1 @@
+/usr/bin/cc  -O0 -rdynamic CMakeFiles/dominating_set.dir/dominating_set.c.o -o dominating_set  ompdist/libompdist.a -lm -fopenmp 

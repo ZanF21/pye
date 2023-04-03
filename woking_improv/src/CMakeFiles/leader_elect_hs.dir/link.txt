@@ -1,0 +1,1 @@
+/usr/bin/cc  -O0 -rdynamic CMakeFiles/leader_elect_hs.dir/leader_elect_hs.c.o -o leader_elect_hs  ompdist/libompdist.a -lm -fopenmp 

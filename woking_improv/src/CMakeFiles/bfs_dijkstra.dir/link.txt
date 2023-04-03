@@ -1,0 +1,1 @@
+/usr/bin/cc  -O0 -rdynamic CMakeFiles/bfs_dijkstra.dir/bfs_dijkstra.c.o -o bfs_dijkstra  ompdist/libompdist.a -lm -fopenmp 

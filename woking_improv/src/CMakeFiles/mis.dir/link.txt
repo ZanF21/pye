@@ -1,0 +1,1 @@
+/usr/bin/cc  -O0 -rdynamic CMakeFiles/mis.dir/mis.c.o -o mis  ompdist/libompdist.a -lm -fopenmp 

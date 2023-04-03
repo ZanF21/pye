@@ -1,0 +1,1 @@
+/usr/bin/cc  -O0 -rdynamic CMakeFiles/kcommittee.dir/kcommittee.c.o -o kcommittee  ompdist/libompdist.a -lm -fopenmp 

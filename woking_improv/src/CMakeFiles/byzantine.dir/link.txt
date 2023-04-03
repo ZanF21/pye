@@ -1,0 +1,1 @@
+/usr/bin/cc  -O0 -rdynamic CMakeFiles/byzantine.dir/byzantine.c.o -o byzantine  ompdist/libompdist.a -lm -fopenmp 
