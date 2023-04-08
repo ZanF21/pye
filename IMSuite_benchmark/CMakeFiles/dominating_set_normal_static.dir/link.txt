@@ -1,0 +1,1 @@
+/home/prasoon/opt/gcc-11.2/bin/gcc  -O0  -rdynamic CMakeFiles/dominating_set_normal_static.dir/dominating_set_normal_static.c.o  -o dominating_set_normal_static  ompdist/libompdist.a -lm -fopenmp 

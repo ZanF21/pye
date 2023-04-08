@@ -1,0 +1,46 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/prasoon/Benchmark_test/normal/config.h
+
+/home/prasoon/Benchmark_test/normal/ompdist/graph.h
+stdio.h
+-
+vector.h
+/home/prasoon/Benchmark_test/normal/ompdist/vector.h
+
+/home/prasoon/Benchmark_test/normal/ompdist/utils.h
+stdio.h
+-
+libgen.h
+-
+time.h
+-
+../config.h
+/home/prasoon/Benchmark_test/normal/config.h
+
+/home/prasoon/Benchmark_test/normal/ompdist/vector.h
+stddef.h
+-
+
+/home/prasoon/Benchmark_test/normal/page_rank.c
+stdio.h
+-
+stdlib.h
+-
+omp.h
+-
+ompdist/graph.h
+/home/prasoon/Benchmark_test/normal/ompdist/graph.h
+ompdist/utils.h
+/home/prasoon/Benchmark_test/normal/ompdist/utils.h
+mmio.h
+/home/prasoon/Benchmark_test/normal/mmio.h
+
+ompdist/mmio.h
+

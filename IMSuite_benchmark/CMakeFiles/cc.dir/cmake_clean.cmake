@@ -1,0 +1,10 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/cc.dir/cc.c.o"
+  "cc"
+  "cc.pdb"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang C)
+  include(CMakeFiles/cc.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()

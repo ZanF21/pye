@@ -1,0 +1,1 @@
+/home/prasoon/opt/gcc-11.2/bin/gcc  -O0  -rdynamic CMakeFiles/bfs_mtx.dir/bfs_mtx.c.o  -o bfs_mtx  ompdist/libompdist.a -lm -fopenmp 

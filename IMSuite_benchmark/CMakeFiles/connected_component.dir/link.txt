@@ -1,0 +1,1 @@
+/usr/bin/cc  -O0 -rdynamic CMakeFiles/connected_component.dir/connected_component.c.o -o connected_component  ompdist/libompdist.a -lm -fopenmp 

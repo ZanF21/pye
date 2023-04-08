@@ -1,0 +1,2 @@
+/usr/bin/ar qc libompdist.a CMakeFiles/ompdist.dir/election.c.o CMakeFiles/ompdist.dir/graph.c.o CMakeFiles/ompdist.dir/graph_gen.c.o CMakeFiles/ompdist.dir/locks.c.o CMakeFiles/ompdist.dir/mmio.c.o CMakeFiles/ompdist.dir/msr.c.o CMakeFiles/ompdist.dir/queues.c.o CMakeFiles/ompdist.dir/tree_gen.c.o CMakeFiles/ompdist.dir/utils.c.o CMakeFiles/ompdist.dir/vector.c.o
+/usr/bin/ranlib libompdist.a

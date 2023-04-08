@@ -1,0 +1,1 @@
+/usr/bin/cc  -O0  -rdynamic CMakeFiles/cc.dir/cc.c.o  -o cc  ompdist/libompdist.a -lm -fopenmp 
