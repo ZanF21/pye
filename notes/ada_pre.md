@@ -1,0 +1,4 @@
+- prefetches memory at the object granularity instead of the usual cache block granularity
+- software manager called a Prefetch Module 
+- dynamically decides whether to profile, prefetch, or sleep by monitoring it’s prefetch prediction accuracy
+- 
