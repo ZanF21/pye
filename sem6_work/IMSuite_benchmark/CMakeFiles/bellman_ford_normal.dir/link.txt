@@ -1,1 +1,0 @@
-/home/prasoon/opt/gcc-11.2/bin/gcc  -O0  -rdynamic CMakeFiles/bellman_ford_normal.dir/bellman_ford_normal.c.o  -o bellman_ford_normal  ompdist/libompdist.a -lm -fopenmp 

@@ -1,1 +1,0 @@
-/home/prasoon/opt/gcc-11.2/bin/gcc  -O0  -rdynamic CMakeFiles/page_rank_normal.dir/page_rank_normal.c.o  -o page_rank_normal  ompdist/libompdist.a -lm -fopenmp 

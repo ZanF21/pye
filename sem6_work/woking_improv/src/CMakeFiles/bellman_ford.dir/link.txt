@@ -1,1 +1,0 @@
-/usr/bin/cc  -O0 -rdynamic CMakeFiles/bellman_ford.dir/bellman_ford.c.o -o bellman_ford  ompdist/libompdist.a -lm -fopenmp 

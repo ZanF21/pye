@@ -1,1 +1,0 @@
-/home/prasoon/opt/gcc-11.2/bin/gcc  -O0  -rdynamic CMakeFiles/ccbackup.dir/ccbackup.c.o  -o ccbackup  ompdist/libompdist.a -lm -fopenmp 

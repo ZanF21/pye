@@ -1,1 +1,0 @@
-/home/prasoon/opt/gcc-11.2/bin/gcc  -O0  -rdynamic CMakeFiles/connected_component_normal_static_1.dir/connected_component_normal_static_1.c.o  -o connected_component_normal_static_1  ompdist/libompdist.a -lm -fopenmp 

@@ -1,1 +1,0 @@
-/usr/bin/cc  -O0 -rdynamic CMakeFiles/leader_elect_lcr.dir/leader_elect_lcr.c.o -o leader_elect_lcr  ompdist/libompdist.a -lm -fopenmp 

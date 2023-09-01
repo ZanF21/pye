@@ -1,1 +1,0 @@
-/home/prasoon/opt/gcc-11.2/bin/gcc  -O0  -rdynamic CMakeFiles/vertex_coloring.dir/vertex_coloring.c.o  -o vertex_coloring  ompdist/libompdist.a -lm -fopenmp 

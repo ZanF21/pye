@@ -1,6 +1,0 @@
-/home/zz/personal/pye/IMSuite_benchmark/CMakeFiles/connected_component.dir
-/home/zz/personal/pye/IMSuite_benchmark/CMakeFiles/edit_cache.dir
-/home/zz/personal/pye/IMSuite_benchmark/CMakeFiles/rebuild_cache.dir
-/home/zz/personal/pye/IMSuite_benchmark/ompdist/CMakeFiles/ompdist.dir
-/home/zz/personal/pye/IMSuite_benchmark/ompdist/CMakeFiles/edit_cache.dir
-/home/zz/personal/pye/IMSuite_benchmark/ompdist/CMakeFiles/rebuild_cache.dir

@@ -1,1 +1,0 @@
-/usr/bin/cc  -O0 -rdynamic CMakeFiles/mst.dir/mst.c.o -o mst  ompdist/libompdist.a -lm -fopenmp 
