@@ -9,11 +9,18 @@
 #include "ompdist/vector.h"
 
 #include "config.h"
-
 #include "mmio.h"
+
 #include <emmintrin.h>
 #include <stdio.h>
+#include <time.h>
 #include <xmmintrin.h>
+
+// L1: THE BULK_DATA workload is RANDOM (No prefetch done)
+// PREFETCHING ONLY 1 LVL
+// L2: WILL NOT BE PREFETCHED
+
+#define HAS_BUILTIN_PREFETCH __has_builtin(__builtin_prefetch)
 
 // #define ENERGY
 // Uncomment the above line if you want to measure energy
@@ -32,17 +39,22 @@ typedef struct {
   char bulk_data[1280]; // 20*64
 } payload;
 
+// L1 : RANDOM ACCESS (NEED ALL BLOCKS)
 void perform_work_on_bulk(payload *data) {
   // access all elements of bulk data in random order
-  for (int i = 0; i < 1274; i++) {
-    int index = rand() % 1274;
-    char *ptr = (char *)(data->bulk_data + index);
-    *ptr = *ptr + 1;
-    ptr[0] = (ptr[0] + rand() % 10) % 256;
-    for (int j = 0; j < 1e2; j++) {
-      j++;
-      j--;
-      int l = j;
+  for (int i = 0; i < 20; i++) {
+    if (i % 2 == 0) {
+      int index = (i / 2) * 64;
+      char *ptr = (char *)(data->bulk_data + index);
+      *ptr = *ptr + 1;
+    } else if (i % 1 == 0) {
+      int index = 1280 - (i + 1) / 2 * 64;
+      char *ptr = (char *)(data->bulk_data + index);
+      *ptr = *ptr + 1;
+    } else {
+      int index = i * 1240123;
+      char *ptr = (char *)(data->bulk_data + index);
+      *ptr = *ptr + 1;
     }
   }
 }
@@ -83,100 +95,131 @@ void initialize_graph(graph *g) {
  */
 int broadcast_start(graph *g, int p) {
   int nobody_was_discovered = 1;
-
+  // printf("%d\n",g_N);
   graph *g_pf = g;
 
-  // _mm_prefetch(&c, _MM_HINT_T0);
-  // _mm_prefetch(&c, _MM_HINT_T1);
-  // _mm_prefetch(&c, _MM_HINT_T2);
-  // _mm_prefetch(&c, _MM_HINT_NTA);
-
-  // -------------------------------------------------------------------
-  // Not writing this as a function(to avoid jumps), code might get
-  // repeatative
-  int STRIDE = 5; // assuming it is lesser that g->N
-
-  node *pf_node;
-  payload *pf_payload; // bulk data acessed if needed
-
+  // printf("+ S1\n");
+  // ---------------------------------------------------------
+  // *_*_*_*_*_*_* Start up code for prefetching *_*_*_*_*_*_*
+  // ---------------------------------------------------------
+  const int STRIDE = 2;
+  const int g_N = g->N - STRIDE - 3;
+  const int STRIDE_2 = 5;
+  node *pf_cur;
+  payload *pf_data;
   for (int i = 0; i < STRIDE; i++) {
+    // LVL 1 access[i] ( - LVL 1 ) { PRESENT IN CURR ITERATION }
+    pf_cur = elem_at(&g_pf->vertices, i);
+    // *** LVL 1 needed[i+1] ( + LVL 1 ) { PREFETCH FOR NEXT ITERATION }
+    _mm_prefetch(elem_at(&g_pf->vertices, i + 3), _MM_HINT_T0);
 
-    // ====== prefetch routine ====== (looks very similar to existing
-    // non-prefetch code)
-    pf_node = elem_at(&g_pf->vertices, i);
-    _mm_prefetch(elem_at(&g_pf->vertices, i + 1), _MM_HINT_T0);
+    // LVL 2 access[i] ( - LVL 2 ) { CACHE MISS in first iteration(pf_node only
+    // address was present)}
+    pf_data = pf_cur->data;
 
-    // this call in itself will cause a cache miss for the first elem
-    pf_payload = pf_node->data;
-
-    // _mm_prefetch(pf_node, _MM_HINT_T0); // This will already be prefetched as
-    // we access the data field
-    _mm_prefetch(pf_payload + 0,
-                 _MM_HINT_T0); // + 0 as data segment is in first 64 bytes
-
-    // bringing bulk data into cache if required
-    if (pf_payload->phase_discovered == p) {
-      // + 64 as bulk_data segment is after first 64 bytes
+    // LVL 3 access[i] ( - LVL 3 ) [MISS]
+    if (pf_data->phase_discovered == p) {
+      // L1 // USED by perform_work_on_bulk (need to figure this out somehow)
+      // LVL 2 needed[i] ( + LVL 2 ) { PREFETCH FOR CURR ITERATION}
       for (int i = 0; i < 20; i++) {
-        _mm_prefetch(pf_payload + 64 + 64 * i, _MM_HINT_T0);
+        _mm_prefetch(pf_data + 64 + 64 * i, _MM_HINT_T0);
       }
     }
-    // ====== prefetch routine ======
   }
-  // -------------------------------------------------------------------
-
+  // ---------------------------------------------------------
+  // *_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*
+  // ---------------------------------------------------------
+  // printf("- S1\n");
 #pragma omp parallel for schedule(SCHEDULING_METHOD)
-  for (int i = 0; i < g->N; i++) {
-
-    // -------------------------------------------------------------------
-    // int STRIDE_2 = 2;
-    if (i + STRIDE + 1 < g->N) {
-      // ====== prefetch routine ====== (looks very similar to existing
-      // non-prefetch code)
-      pf_node = elem_at(&g_pf->vertices, i + STRIDE);
-      _mm_prefetch(elem_at(&g_pf->vertices, i + STRIDE + 1), _MM_HINT_T0);
-
-      pf_payload = pf_node->data;
-
-      _mm_prefetch(pf_payload + 0,
-                   _MM_HINT_T0); // + 0 as data segment is in first 64 bytes
-
-      // bringing bulk data into cache if required
-
-      // node *neighbor_pf_node = *((node **)elem_at(&pf_node->neighbors, 0));
-      // _mm_prefetch(neighbor_pf_node, _MM_HINT_T0);
-      if (pf_payload->phase_discovered == p) {
-        for (int i = 0; i < 20; i++) {
-          _mm_prefetch(pf_payload + 64 + 64 * i, _MM_HINT_T0);
-        }
-        // for (int j = 0; j < STRIDE_2; j++) {
-        //   neighbor_pf_node = *((node **)elem_at(&pf_node->neighbors, j));
-        //   _mm_prefetch(neighbor_pf_node, _MM_HINT_T0);
-        //   _mm_prefetch(neighbor_pf_node->data, _MM_HINT_T0);
-        // }
-      }
-      // ====== prefetch routine ======
-    }
-    // -------------------------------------------------------------------
+  for (int i = 0; i < g_N; i++) {
 
     node *cur = elem_at(&g->vertices, i);
     payload *data = cur->data;
 
     // this node was just discovered in phase `p`
     if (data->phase_discovered == p) {
-      // ---------------------
-      // prefetch routine
       node *neighbor_pf_node;
       payload *neighbor_pf_payload;
 
+      // L1
       perform_work_on_bulk(data);
-      // we send a "join p+1" message to all quiet neighbors
+
+      // L2
+      // ---------------------------------------------------------
+      // *_*_*_*_*_*_* Start up code for prefetching *_*_*_*_*_*_*
+      // ---------------------------------------------------------
+      for (int j = 0; j + 3 < cur->degree && j < STRIDE_2; j++) {
+        // LVL 1 access[i]
+        node *pf_neighbor = *((node **)elem_at(&cur->neighbors, j));
+        _mm_prefetch(*((node **)elem_at(&pf_cur->neighbors, j + 3)),
+                     _MM_HINT_T0);
+        // LVL 1 needed[i+1] (could all be misses)
+        // LVL 2 needed[i]
+        _mm_prefetch(pf_neighbor->data, _MM_HINT_T0);
+      }
+      // ---------------------------------------------------------
+      // *_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*
+      // ---------------------------------------------------------
+      //  _mm_prefetch(g->N, _MM_HINT_T0);
       for (int j = 0; j < cur->degree; j++) {
-        // if (j + STRIDE_2 < cur->degree) {
-        //   neighbor_pf_node = *((node **)elem_at(&cur->neighbors, j + STRIDE_2));
-        //   _mm_prefetch(neighbor_pf_node, _MM_HINT_T0);
-        //   _mm_prefetch(neighbor_pf_node->data, _MM_HINT_T0);
-        // }
+        // // #########################################################
+        // // *=*=*=*=*=*=*  regular code for prefetching *=*=*=*=*=*=*
+        // // #########################################################
+        if (j + STRIDE_2 + 3 < cur->degree) {
+          // LVL 1 access[i]
+          node *pf_neighbor =
+              *((node **)elem_at(&cur->neighbors, j + STRIDE_2));
+          // LVL 1 needed[i+1]
+          _mm_prefetch(*((node **)elem_at(&cur->neighbors, j + STRIDE_2 + 3)),
+                       _MM_HINT_T0);
+          // LVL 2 needed[i]
+          _mm_prefetch(pf_neighbor->data, _MM_HINT_T0);
+        }
+        // // #########################################################
+        // // *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+        // // #########################################################
+        node *neighbor = *((node **)elem_at(&cur->neighbors, j));
+        payload *neighbor_data = neighbor->data;
+
+        if (neighbor_data->phase_discovered < 0) {
+          neighbor_data->phase_discovered = p + 1;
+          neighbor_data->parent_label = cur->label;
+          nobody_was_discovered = 0;
+        }
+      }
+    }
+
+    // #########################################################
+    // *=*=*=*=*=*=*  regular code for prefetching *=*=*=*=*=*=*
+    // #########################################################
+
+    // LVL 1 access[i + STRIDE] ( - LVL 1 ) { PRESENT IN CURR ITERATION }
+    pf_cur = elem_at(&g->vertices, i + STRIDE);
+    // LVL 1 needed[i + STRIDE + 1] ( + LVL 1 ) { PREFETCH FOR NEXT ITERATION
+    _mm_prefetch(elem_at(&g->vertices, i + STRIDE + 3), _MM_HINT_T0);
+
+    // LVL 2 access[i + STRIDE] ( - LVL 2 ) { - - - }
+    pf_data = pf_cur->data;
+
+    // LVL 3 access[i + STRIDE] ( - LVL 3 )
+    if (pf_data->phase_discovered == p) {
+      // L1 // USED by perform_work_on_bulk //
+      // LVL 2 needed[i + STRIDE] ( + LVL 2 ) { PREFETCH FOR CURR ITERATION}
+      for (int k = 0; k < 20; k++) {
+        _mm_prefetch(pf_data + 64 + 64 * k, _MM_HINT_T0);
+        // break when necessary
+      }
+    }
+    // #########################################################
+    // *=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
+    // #########################################################
+  }
+  for (int i = g_N; i < g_N + STRIDE + 3; i++) {
+    node *cur = elem_at(&g->vertices, i);
+    payload *data = cur->data;
+    if (data->phase_discovered == p) {
+      perform_work_on_bulk(data);
+      for (int j = 0; j < cur->degree; j++) {
         node *neighbor = *((node **)elem_at(&cur->neighbors, j));
         payload *neighbor_data = neighbor->data;
 
@@ -227,7 +270,9 @@ int main(int argc, char *argv[]) {
   int N;
   int M;
   graph *g;
-
+#ifdef HAS_BUILTIN_PREFETCH
+  printf("HAS_BUILTIN_PREFETCH\n");
+#endif
   int iterate;
   int iterations = 1;
 
@@ -285,7 +330,6 @@ int main(int argc, char *argv[]) {
 #endif
 
   for (int i = 0; i < iterations; i++) {
-    begin_timer();
 #ifdef ENERGY
     init_energy_measure();
 #endif
@@ -294,6 +338,7 @@ int main(int argc, char *argv[]) {
     int nobody_was_discovered = 0;
 
     initialize_graph(g);
+    begin_timer();
     while (!nobody_was_discovered) {
       nobody_was_discovered = broadcast_start(g, p);
       p++;
